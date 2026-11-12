@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plataforma Escolar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body>
+
+{# Mensajes flash (errores y avisos) dentro de cada tarjeta #}
+{% macro mensajes() %}
+  {% with lista = get_flashed_messages(with_categories=true) %}
+    {% for categoria, texto in lista %}
+      <div class="alerta alerta-{{ categoria }}">{{ texto }}</div>
+    {% endfor %}
+  {% endwith %}
+{% endmacro %}
+
+{% if vista == 'login' %}
+<!-- INICIO DE SESIÓN -->
+<div id="login">
+  <h1>Inicio de sesión</h1>
+  {{ mensajes() }}
+
+  <form method="post" action="{{ url_for('login') }}">
+    <label for="correo">Correo electrónico:</label>
+    <input type="email" id="correo" name="correo" value="{{ correo }}" required>
+
+    <label for="clave">Contraseña:</label>
+    <input type="password" id="clave" name="clave" required>
+
+    <br><br>
+    <button type="submit">Iniciar sesión</button>
+  </form>
+
+  <p>¿No tienes una cuenta?</p>
+  <a class="btn btn-borde" href="{{ url_for('registro') }}">Registrarse</a>
+</div>
+
+{% elif vista == 'registro' %}
+<!-- REGISTRO -->
+<div id="registro">
+  <h1>Registro de usuario</h1>
+  {{ mensajes() }}
+
+  <form method="post" action="{{ url_for('registro') }}">
+    <label for="nombre">Nombre completo:</label>
+    <input type="text" id="nombre" name="nombre" value="{{ nombre }}" required>
+
+    <label for="correo">Correo electrónico:</label>
+    <input type="email" id="correo" name="correo" value="{{ correo }}" required>
+
+    <label for="edad">Edad:</label>
+    <input type="number" id="edad" name="edad" min="5" max="120" value="{{ edad }}" required>
+
+    <label for="especialidad">Especialidad:</label>
+    <input type="text" id="especialidad" name="especialidad" value="{{ especialidad }}" required>
+
+    <label for="clave">Contraseña (mínimo 6 caracteres):</label>
+    <input type="password" id="clave" name="clave" minlength="6" required>
+
+    <br><br>
+    <button type="submit">Crear cuenta</button>
+  </form>
+
+  <p>¿Ya tienes una cuenta?</p>
+  <a class="btn btn-borde" href="{{ url_for('login') }}">Regresar a inicio de sesión</a>
+</div>
+
+{% elif vista == 'bienvenida' %}
+<!-- BIENVENIDA -->
+<div id="bienvenida">
+  <h1>¡Bienvenido!</h1>
+  {{ mensajes() }}
+
+  <p>Hola, <strong>{{ session['nombre'] }}</strong></p>
+  <p>Has iniciado sesión correctamente.</p>
+
+  <div class="acciones">
+    <a class="btn" href="{{ url_for('materias') }}">Continuar a las materias</a>
+    <a class="btn btn-azul" href="{{ url_for('juegos') }}">🎮 Juegos</a>
+    <a class="btn btn-verde" href="{{ url_for('progreso') }}">📊 Mi progreso</a>
+  </div>
+  <div class="acciones">
+    <form method="post" action="{{ url_for('logout') }}">
+      <button type="submit" class="btn-gris">Cerrar sesión</button>
+    </form>
+  </div>
+</div>
+
+{% elif vista == 'materias' %}
+<!-- MENÚ DE MATERIAS -->
+<div id="materias">
+  <h1>Mis materias</h1>
+  {{ mensajes() }}
+  <p>Selecciona una materia:</p>
+
+  <div class="lista-botones">
+    {% set colores = ['btn-rosa', 'btn-azul', 'btn-morado', 'btn-verde', 'btn-amarillo'] %}
+    {% for clave, m in materias.items() %}
+      <a class="btn {{ colores[loop.index0 % 5] }}" href="{{ url_for('materia', clave=clave) }}">{{ m.nombre }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="acciones">
+    <a class="btn btn-azul" href="{{ url_for('juegos') }}">🎮 Juegos</a>
+    <a class="btn btn-verde" href="{{ url_for('progreso') }}">📊 Mi progreso</a>
+    <a class="btn btn-gris" href="{{ url_for('bienvenida') }}">Regresar a bienvenida</a>
+  </div>
+</div>
+
+{% elif vista == 'materia' %}
+<!-- TEMAS DE UNA MATERIA -->
+<div id="materias">
+  <h1>{{ materia.nombre }}</h1>
+  <p>Selecciona uno de los {{ materia.temas|length }} temas:</p>
+
+  <div class="lista-botones">
+    {% for t in materia.temas %}
+      <a class="btn" href="{{ url_for('tema', clave=clave, numero=loop.index) }}">{{ loop.index }}. {{ t.titulo }}</a>
+    {% endfor %}
+  </div>
+
+  <a class="btn btn-gris" href="{{ url_for('materias') }}">Regresar a materias</a>
+</div>
+
+{% elif vista == 'tema' %}
+<!-- INFORMACIÓN DEL TEMA -->
+<div id="contenidoTema">
+  <p><small>{{ materia.nombre }} · Tema {{ numero }} de {{ total }}</small></p>
+  <h1>{{ tema.titulo }}</h1>
+  <p>{{ tema.explicacion }}</p>
+
+  <h2>Ideas clave</h2>
+  <ul>
+    {% for punto in tema.puntos %}
+      <li>{{ punto }}</li>
+    {% endfor %}
+  </ul>
+
+  <h2>Ejemplo</h2>
+  <div class="ejemplo-caja">{{ tema.ejemplo }}</div>
+
+  <h2>Practica</h2>
+  <p>{{ tema.practica }}</p>
+  <details>
+    <summary>Ver respuesta</summary>
+    <p>{{ tema.respuesta }}</p>
+  </details>
+
+  {% if tema.quiz %}
+  <h2>Evaluación interactiva</h2>
+  <p>Contesta las siguientes preguntas seleccionando la respuesta correcta.</p>
+
+  <div id="cuestionario">
+    <div id="contadorQuiz"></div>
+    <div id="barraProgreso"><div></div></div>
+    <h3 id="preguntaQuiz"></h3>
+    <div id="opcionesQuiz"></div>
+    <p id="resultadoQuiz"></p>
+    <button type="button" id="siguienteQuiz" style="display:none;">Siguiente pregunta</button>
+  </div>
+
+  <div id="finalQuiz" style="display:none;">
+    <h3>¡Terminaste la evaluación!</h3>
+    <span class="puntaje" id="puntajeQuiz"></span>
+    <p id="calificacionQuiz"></p>
+    <p id="guardadoQuiz"></p>
+    <div class="acciones">
+      <button type="button" id="reiniciarQuiz">Volver a intentar</button>
+      <a class="btn btn-verde" href="{{ url_for('progreso') }}">📊 Ver mi progreso</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <h2>Video explicativo</h2>
+  {% if tema.video %}
+    <div class="video-caja">
+      <iframe src="https://www.youtube-nocookie.com/embed/{{ tema.video|urlencode }}"
+              title="Video explicativo: {{ tema.titulo }}" loading="lazy"
+              allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen></iframe>
+    </div>
+  {% else %}
+    <p>Todavía no hay un video incrustado para este tema. Usa el enlace de abajo para ver videos explicativos.</p>
+  {% endif %}
+  <p>
+    <a href="https://www.youtube.com/results?search_query={{ (tema.titulo ~ ' ' ~ materia.nombre ~ ' explicación')|urlencode }}"
+       target="_blank" rel="noopener">Buscar más videos de este tema en YouTube</a>
+  </p>
+
+  <div class="acciones">
+    {% if numero > 1 %}
+      <a class="btn btn-borde" href="{{ url_for('tema', clave=clave, numero=numero - 1) }}">← Tema anterior</a>
+    {% endif %}
+    {% if numero < total %}
+      <a class="btn btn-borde" href="{{ url_for('tema', clave=clave, numero=numero + 1) }}">Tema siguiente →</a>
+    {% endif %}
+  </div>
+  <div class="acciones">
+    <a class="btn" href="{{ url_for('materia', clave=clave) }}">Regresar a los temas</a>
+    <a class="btn btn-gris" href="{{ url_for('bienvenida') }}">Regresar a bienvenida</a>
+  </div>
+</div>
+
+{% if tema.quiz %}
+<script>
+// Preguntas de este tema (vienen de MATERIAS en app.py).
+const preguntas = {{ tema.quiz|tojson }};
+const claveMateria = {{ clave|tojson }};
+const numeroTema = {{ numero }};
+let actual = 0;
+let aciertos = 0;
+let contestada = false;
+
+const $ = function (id) { return document.getElementById(id); };
+
+function mostrarPregunta() {
+  contestada = false;
+  const p = preguntas[actual];
+
+  $("contadorQuiz").textContent = "Pregunta " + (actual + 1) + " de " + preguntas.length;
+  $("barraProgreso").firstElementChild.style.width = (actual / preguntas.length * 100) + "%";
+  $("preguntaQuiz").textContent = p.pregunta;
+  $("resultadoQuiz").textContent = "";
+  $("siguienteQuiz").style.display = "none";
+
+  const caja = $("opcionesQuiz");
+  caja.textContent = "";
+  p.opciones.forEach(function (texto, indice) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "opcion-quiz";
+    b.textContent = texto;
+    b.addEventListener("click", function () { comprobar(indice); });
+    caja.appendChild(b);
+  });
+}
+
+function comprobar(indice) {
+  if (contestada) return;
+  contestada = true;
+
+  const p = preguntas[actual];
+  const resultado = $("resultadoQuiz");
+
+  document.querySelectorAll(".opcion-quiz").forEach(function (b, i) {
+    b.disabled = true;
+    if (i === p.correcta) b.classList.add("correcta");
+    if (i === indice && i !== p.correcta) b.classList.add("incorrecta");
+  });
+
+  if (indice === p.correcta) {
+    aciertos++;
+    resultado.textContent = "¡Correcto! Muy bien.";
+    resultado.style.color = "green";
+  } else {
+    resultado.textContent = "Incorrecto. La respuesta correcta es: " + p.opciones[p.correcta] + ".";
+    resultado.style.color = "red";
+  }
+
+  const sig = $("siguienteQuiz");
+  sig.textContent = (actual === preguntas.length - 1) ? "Ver resultado" : "Siguiente pregunta";
+  sig.style.display = "inline-block";
+}
+
+function siguiente() {
+  if (!contestada) return;
+  actual++;
+  if (actual < preguntas.length) {
+    mostrarPregunta();
+  } else {
+    terminar();
+  }
+}
+
+function guardarResultado() {
+  const aviso = $("guardadoQuiz");
+  aviso.textContent = "Guardando tu resultado...";
+  fetch("{{ url_for('guardar_resultado') }}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ materia: claveMateria, tema: numeroTema, aciertos: aciertos })
+  }).then(function (r) {
+    aviso.textContent = r.ok
+      ? "Tu resultado quedó guardado en Mi progreso."
+      : "No se pudo guardar tu resultado.";
+  }).catch(function () {
+    aviso.textContent = "No se pudo guardar tu resultado.";
+  });
+}
+
+function terminar() {
+  $("cuestionario").style.display = "none";
+  $("finalQuiz").style.display = "block";
+  const porcentaje = Math.round(aciertos / preguntas.length * 100);
+  $("puntajeQuiz").textContent = porcentaje + "%";
+  $("calificacionQuiz").textContent =
+    "Respuestas correctas: " + aciertos + " de " + preguntas.length + ".";
+  guardarResultado();
+}
+
+function reiniciar() {
+  actual = 0;
+  aciertos = 0;
+  $("guardadoQuiz").textContent = "";
+  $("finalQuiz").style.display = "none";
+  $("cuestionario").style.display = "block";
+  mostrarPregunta();
+}
+
+$("siguienteQuiz").addEventListener("click", siguiente);
+$("reiniciarQuiz").addEventListener("click", reiniciar);
+mostrarPregunta();
+</script>
+{% endif %}
+
+{% elif vista == 'juegos' %}
+<!-- JUEGOS -->
+<div id="perfil">
+  <h1>🎮 Juegos</h1>
+  {{ mensajes() }}
+
+  <h2>Memoria de parejas</h2>
+  <p>Voltea las cartas y une cada pregunta con su respuesta.</p>
+  <div class="centrado">
+    <select id="selMemoria" aria-label="Materia del juego de memoria">
+      {% for clave, m in materias.items() %}
+        <option value="{{ clave }}">{{ m.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <p class="estado" id="infoMemoria">Movimientos: 0</p>
+  <div id="tableroMemoria"></div>
+  <div class="centrado"><button type="button" id="nuevaMemoria">Nueva partida</button></div>
+
+  <h2>Reto rápido de cálculo</h2>
+  <p>Resuelve todas las operaciones que puedas en 30 segundos.</p>
+  <div class="centrado"><button type="button" id="iniciarReto" class="btn-verde">Empezar reto</button></div>
+  <div id="zonaReto" style="display:none;">
+    <div class="reto-datos">
+      <span id="puntosReto">Puntos: 0</span>
+      <span id="tiempoReto">Tiempo: 30 s</span>
+    </div>
+    <div class="reto-pregunta" id="preguntaReto"></div>
+    <div class="centrado">
+      <input type="number" id="respReto" inputmode="numeric" placeholder="Tu respuesta" style="max-width:220px;">
+    </div>
+    <div class="centrado"><button type="button" id="enviarReto">Responder</button></div>
+  </div>
+  <p class="estado" id="mensajeReto"></p>
+
+  <div class="acciones">
+    <a class="btn btn-verde" href="{{ url_for('progreso') }}">📊 Mi progreso</a>
+    <a class="btn btn-gris" href="{{ url_for('bienvenida') }}">Regresar a bienvenida</a>
+  </div>
+</div>
+
+<script>
+const PAREJAS = {{ parejas|tojson }};
+const $ = function (id) { return document.getElementById(id); };
+
+/* ---------- Memoria de parejas ---------- */
+(function () {
+  let abiertas = [];
+  let bloqueo = false;
+  let movimientos = 0;
+  let encontradas = 0;
+  let totalParejas = 0;
+
+  function barajar(lista) {
+    for (let i = lista.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = lista[i]; lista[i] = lista[j]; lista[j] = tmp;
+    }
+    return lista;
+  }
+
+  function nuevaPartida() {
+    const juego = PAREJAS[$("selMemoria").value];
+    const cartas = [];
+    juego.forEach(function (p, i) {
+      cartas.push({ par: i, texto: p[0] });
+      cartas.push({ par: i, texto: p[1] });
+    });
+    barajar(cartas);
+
+    abiertas = [];
+    bloqueo = false;
+    movimientos = 0;
+    encontradas = 0;
+    totalParejas = juego.length;
+    $("infoMemoria").textContent = "Movimientos: 0";
+
+    const tablero = $("tableroMemoria");
+    tablero.textContent = "";
+    cartas.forEach(function (c) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "carta";
+      b.dataset.par = c.par;
+      b.dataset.texto = c.texto;
+      b.textContent = "?";
+      b.addEventListener("click", function () { voltear(b); });
+      tablero.appendChild(b);
+    });
+  }
+
+  function voltear(carta) {
+    if (bloqueo || carta.classList.contains("abierta") || carta.classList.contains("hecha")) return;
+
+    carta.classList.add("abierta");
+    carta.textContent = carta.dataset.texto;
+    abiertas.push(carta);
+
+    if (abiertas.length < 2) return;
+
+    movimientos++;
+    $("infoMemoria").textContent = "Movimientos: " + movimientos;
+    const a = abiertas[0];
+    const b = abiertas[1];
+
+    if (a.dataset.par === b.dataset.par) {
+      [a, b].forEach(function (x) {
+        x.classList.remove("abierta");
+        x.classList.add("hecha");
+      });
+      abiertas = [];
+      encontradas++;
+      if (encontradas === totalParejas) {
+        $("infoMemoria").textContent = "¡Lo lograste en " + movimientos + " movimientos! 🎉";
+      }
+    } else {
+      bloqueo = true;
+      setTimeout(function () {
+        [a, b].forEach(function (x) {
+          x.classList.remove("abierta");
+          x.textContent = "?";
+        });
+        abiertas = [];
+        bloqueo = false;
+      }, 900);
+    }
+  }
+
+  $("selMemoria").addEventListener("change", nuevaPartida);
+  $("nuevaMemoria").addEventListener("click", nuevaPartida);
+  nuevaPartida();
+})();
+
+/* ---------- Reto rápido ---------- */
+(function () {
+  let puntos = 0;
+  let restante = 30;
+  let reloj = null;
+  let respuesta = 0;
+  let mejor = 0;
+
+  function azar(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function nuevaOperacion() {
+    const ops = ["+", "−", "×"];
+    const op = ops[azar(0, 2)];
+    let a, b;
+    if (op === "×") {
+      a = azar(2, 9); b = azar(2, 9); respuesta = a * b;
+    } else if (op === "+") {
+      a = azar(5, 60); b = azar(5, 60); respuesta = a + b;
+    } else {
+      a = azar(20, 80); b = azar(5, a); respuesta = a - b;
+    }
+    $("preguntaReto").textContent = a + " " + op + " " + b + " = ?";
+    $("respReto").value = "";
+    $("respReto").focus();
+  }
+
+  function terminar() {
+    clearInterval(reloj);
+    $("respReto").disabled = true;
+    $("enviarReto").disabled = true;
+    if (puntos > mejor) mejor = puntos;
+    $("mensajeReto").textContent =
+      "¡Se acabó el tiempo! Lograste " + puntos + " puntos. Tu mejor marca en esta sesión: " + mejor + ".";
+  }
+
+  function iniciar() {
+    puntos = 0;
+    restante = 30;
+    $("puntosReto").textContent = "Puntos: 0";
+    $("tiempoReto").textContent = "Tiempo: 30 s";
+    $("mensajeReto").textContent = "";
+    $("zonaReto").style.display = "block";
+    $("respReto").disabled = false;
+    $("enviarReto").disabled = false;
+    nuevaOperacion();
+
+    clearInterval(reloj);
+    reloj = setInterval(function () {
+      restante--;
+      $("tiempoReto").textContent = "Tiempo: " + restante + " s";
+      if (restante <= 0) terminar();
+    }, 1000);
+  }
+
+  function responder() {
+    if (restante <= 0) return;
+    const valor = $("respReto").value.trim();
+    if (valor === "") return;
+    if (parseInt(valor, 10) === respuesta) {
+      puntos++;
+      $("puntosReto").textContent = "Puntos: " + puntos;
+    }
+    nuevaOperacion();
+  }
+
+  $("iniciarReto").addEventListener("click", iniciar);
+  $("enviarReto").addEventListener("click", responder);
+  $("respReto").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") responder();
+  });
+})();
+</script>
+
+{% elif vista == 'progreso' %}
+<!-- PROGRESO -->
+<div id="perfil">
+  <h1>📊 Mi progreso</h1>
+  {{ mensajes() }}
+  <p class="estado">Tu mejor resultado en cada evaluación, comparado con el grupo.</p>
+
+  {% for clave, m in materias.items() %}
+  <h2>{{ m.nombre }}</h2>
+
+  <div class="resumen">
+    <div class="fila-progreso">
+      <div class="etiqueta">
+        <span>Tu promedio</span>
+        <span>{% if mi_prom[clave] is not none %}{{ mi_prom[clave]|round|int }}%{% else %}Aún sin evaluaciones{% endif %}</span>
+      </div>
+      <div class="barra-fondo"><div class="barra-relleno" style="width: {{ (mi_prom[clave] or 0)|round|int }}%"></div></div>
+    </div>
+    <div class="fila-progreso">
+      <div class="etiqueta">
+        <span>Promedio del grupo</span>
+        <span>{% if grupo[clave] is not none %}{{ grupo[clave]|round|int }}%{% else %}Sin datos{% endif %}</span>
+      </div>
+      <div class="barra-fondo"><div class="barra-relleno grupo" style="width: {{ (grupo[clave] or 0)|round|int }}%"></div></div>
+    </div>
+  </div>
+
+  {% for f in tabla[clave] %}
+  <div class="fila-progreso">
+    <div class="etiqueta">
+      <a href="{{ url_for('tema', clave=clave, numero=f.numero) }}">{{ f.numero }}. {{ f.titulo }}</a>
+      <span>{% if f.mejor is not none %}{{ f.mejor|round|int }}%{% else %}Pendiente{% endif %}</span>
+    </div>
+    <div class="barra-fondo"><div class="barra-relleno" style="width: {{ (f.mejor or 0)|round|int }}%"></div></div>
+  </div>
+  {% endfor %}
+  {% endfor %}
+
+  <h2>Ranking del grupo</h2>
+  {% if ranking %}
+  <div class="tabla-scroll">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Estudiante</th><th>Evaluaciones</th><th>Promedio</th></tr>
+      </thead>
+      <tbody>
+        {% for r in ranking %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ r.nombre }}</td>
+          <td>{{ r.temas }}</td>
+          <td>{{ r.prom|round|int }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>Todavía nadie ha completado una evaluación. ¡Sé el primero!</p>
+  {% endif %}
+
+  <div class="acciones">
+    <a class="btn" href="{{ url_for('materias') }}">Ir a las materias</a>
+    <a class="btn btn-azul" href="{{ url_for('juegos') }}">🎮 Juegos</a>
+    <a class="btn btn-gris" href="{{ url_for('bienvenida') }}">Regresar a bienvenida</a>
+  </div>
+</div>
+
+{% else %}
+<!-- ERROR 404 -->
+<div id="bienvenida">
+  <h1>Página no encontrada</h1>
+  <p>La página que buscas no existe.</p>
+  <a class="btn" href="{{ url_for('inicio') }}">Ir al inicio</a>
+</div>
+{% endif %}
+
+</body>
+</html>
